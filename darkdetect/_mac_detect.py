@@ -6,9 +6,16 @@
 
 """macOS backend using the Objective-C runtime."""
 
+# PyObjC ships no type information, so everything imported from it is Unknown to pyright.
+# pyright: reportMissingImports=false, reportUnknownVariableType=false
+# pyright: reportUnknownMemberType=false, reportUntypedBaseClass=false
+# pyright: reportPossiblyUnboundVariable=false, reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+
 import ctypes
 import ctypes.util
 import os
+import signal
 import subprocess
 import sys
 from collections.abc import Callable
@@ -34,8 +41,8 @@ try:
     objc = ctypes.cdll.LoadLibrary("libobjc.dylib")
 except OSError:
     # revert to full path for older OS versions and hardened programs
-    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library("AppKit"))
-    objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc"))
+    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library("AppKit"))  # pyright: ignore[reportArgumentType]
+    objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc"))  # pyright: ignore[reportArgumentType]
 
 void_p = ctypes.c_void_p
 ull = ctypes.c_uint64
@@ -48,21 +55,22 @@ MSGPROTOTYPE = ctypes.CFUNCTYPE(void_p, void_p, void_p, void_p)
 msg = MSGPROTOTYPE(("objc_msgSend", objc), ((1, "", None), (1, "", None), (1, "", None)))
 
 
-def _utf8(s):
+def _utf8(s: str | bytes) -> bytes:
     if not isinstance(s, bytes):
         s = s.encode("utf8")
     return s
 
 
-def n(name):
+def n(name: str) -> int | None:
     return objc.sel_registerName(_utf8(name))
 
 
-def C(classname):
+def C(classname: str) -> int | None:
     return objc.objc_getClass(_utf8(classname))
 
 
-def theme():
+def theme() -> str:
+    """Return the current theme."""
     NSAutoreleasePool = objc.objc_getClass("NSAutoreleasePool")
     pool = msg(NSAutoreleasePool, n("alloc"))
     pool = msg(pool, n("init"))
@@ -76,10 +84,7 @@ def theme():
     appearanceNS = msg(stdUserDef, n("stringForKey:"), void_p(key))
     appearanceC = msg(appearanceNS, n("UTF8String"))
 
-    if appearanceC is not None:
-        out = ctypes.string_at(appearanceC)
-    else:
-        out = None
+    out = ctypes.string_at(appearanceC) if appearanceC is not None else None
 
     msg(pool, n("release"))
 
@@ -88,29 +93,33 @@ def theme():
     return "Light"
 
 
-def isDark():
+def isDark() -> bool:
+    """Return whether the theme is dark."""
     return theme() == "Dark"
 
 
-def isLight():
+def isLight() -> bool:
+    """Return whether the theme is light."""
     return theme() == "Light"
 
 
-def _listen_child():
-    """Run by a child process, install an observer and print theme on change"""
-    import signal
-
+def _listen_child() -> None:  # pyright: ignore[reportUnusedFunction]
+    """Run by a child process, install an observer and print theme on change."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     OBSERVED_KEY = "AppleInterfaceStyle"
 
     class Observer(NSObject):
         def observeValueForKeyPath_ofObject_change_context_(
-            self, path, object, changeDescription, context
-        ):
+            self,
+            _path: object,
+            _object: object,
+            changeDescription: dict[object, object],
+            _context: object,
+        ) -> None:
             result = changeDescription[NSKeyValueChangeNewKey]
             try:
-                print(f"{'Light' if result is None else result}", flush=True)
+                print(f"{'Light' if result is None else result}", flush=True)  # noqa: T201
             except OSError:
                 os._exit(1)
 
@@ -124,6 +133,7 @@ def _listen_child():
 
 
 def listener(callback: Callable[[str], None]) -> None:
+    """Call ``callback`` with the new theme on every change."""
     if not _can_listen:
         raise NotImplementedError()
     with subprocess.Popen(
@@ -132,5 +142,5 @@ def listener(callback: Callable[[str], None]) -> None:
         universal_newlines=True,
         cwd=Path(__file__).parent,
     ) as p:
-        for line in p.stdout:
+        for line in p.stdout or ():
             callback(line.strip())
