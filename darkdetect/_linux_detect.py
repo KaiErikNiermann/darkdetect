@@ -10,42 +10,41 @@ import subprocess
 from collections.abc import Callable
 from typing import Literal
 
+_INTERFACE_SCHEMA = "org.gnome.desktop.interface"
 
-def theme() -> Literal["Dark", "Light"]:
-    """Return the current theme."""
+
+def _gsettings(key: str) -> str | None:
+    """Return a key of the GNOME interface schema, or None if gsettings cannot read it."""
     try:
-        # Using the freedesktop specifications for checking dark mode
-        out = subprocess.run(
-            ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],  # noqa: S607
+        out = subprocess.run(  # noqa: S603  # fixed argv, key is one of ours
+            ["gsettings", "get", _INTERFACE_SCHEMA, key],  # noqa: S607
             capture_output=True,
+            text=True,
             check=False,
         )
-        stdout = out.stdout.decode()
-        # If not found then trying older gtk-theme method
-        if len(stdout) < 1:
-            out = subprocess.run(
-                ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"],  # noqa: S607
-                capture_output=True,
-                check=False,
-            )
-            stdout = out.stdout.decode()
-    except Exception:
-        return "Light"
-    # we have a string, now remove start and end quote
-    theme = stdout.lower().strip()[1:-1]
-    if "-dark" in theme.lower():
-        return "Dark"
-    return "Light"
+    except OSError:
+        return None
+    # gsettings prints GVariant text, so a string value comes wrapped in single quotes
+    return out.stdout.strip().strip("'") or None
 
 
-def isDark() -> bool:
-    """Return whether the theme is dark."""
-    return theme() == "Dark"
+def theme() -> Literal["Dark", "Light"] | None:
+    """Return the current theme, or None if it cannot be read."""
+    # The freedesktop color-scheme key, then the older gtk-theme one where it is missing
+    current = _gsettings("color-scheme") or _gsettings("gtk-theme")
+    if current is None:
+        return None
+    return "Dark" if "-dark" in current.lower() else "Light"
 
 
-def isLight() -> bool:
-    """Return whether the theme is light."""
-    return theme() == "Light"
+def isDark() -> bool | None:
+    """Return whether the theme is dark, or None if it is unknown."""
+    return None if (current := theme()) is None else current == "Dark"
+
+
+def isLight() -> bool | None:
+    """Return whether the theme is light, or None if it is unknown."""
+    return None if (current := theme()) is None else current == "Light"
 
 
 def listener(callback: Callable[[str], None]) -> None:
