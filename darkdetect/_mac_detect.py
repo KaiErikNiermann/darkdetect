@@ -37,14 +37,19 @@ except ModuleNotFoundError:
     _can_listen = False
 
 
-try:
-    # macOS Big Sur+ use "a built-in dynamic linker cache of all system-provided libraries"
-    appkit = ctypes.cdll.LoadLibrary("AppKit.framework/AppKit")
-    objc = ctypes.cdll.LoadLibrary("libobjc.dylib")
-except OSError:
-    # revert to full path for older OS versions and hardened programs
-    appkit = ctypes.cdll.LoadLibrary(ctypes.util.find_library("AppKit"))  # pyright: ignore[reportArgumentType]
-    objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc"))  # pyright: ignore[reportArgumentType]
+def _load(name: str) -> ctypes.CDLL:
+    """Load a system library by name; PyInstaller warns about LoadLibrary given a path."""
+    # find_library also finds libraries that live only in the dyld cache (Big Sur and later)
+    if (path := ctypes.util.find_library(name)) is None:
+        # LoadLibrary(None) would quietly return the main program instead
+        msg = f"cannot find the {name} library"
+        raise OSError(msg)
+    return ctypes.cdll.LoadLibrary(path)
+
+
+# Loaded for its side effect of registering the Cocoa classes theme() looks up
+appkit = _load("AppKit")
+objc = _load("objc")
 
 void_p = ctypes.c_void_p
 ull = ctypes.c_uint64
