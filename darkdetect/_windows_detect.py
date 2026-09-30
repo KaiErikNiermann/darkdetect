@@ -2,8 +2,16 @@
 
 import ctypes
 import ctypes.wintypes
+import sys
 from collections.abc import Callable
 from typing import Literal
+
+if sys.platform != "win32":
+    # Also makes pyright treat the rest of the module as unreachable off Windows, where winreg
+    # and ctypes.windll do not exist; scripts/pyright-windows.json checks it as Windows.
+    msg = "the Windows backend only works on Windows"
+    raise ImportError(msg)
+
 from winreg import HKEY_CURRENT_USER as hkey  # noqa: N811
 from winreg import OpenKey as getKey
 from winreg import QueryValueEx as getSubkeyValue
