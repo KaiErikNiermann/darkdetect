@@ -14,7 +14,8 @@ environment, whose gsettings has no dconf module and reports the schema defaults
 
 import os
 import subprocess
-from collections.abc import Callable
+from collections import deque
+from collections.abc import Callable, Iterable, Iterator
 from enum import IntEnum
 from typing import Literal
 
@@ -22,6 +23,9 @@ from jeepney import (
     AuthenticationError,
     DBusAddress,
     DBusErrorResponse,
+    MatchRule,
+    Message,
+    message_bus,
     new_method_call,
 )
 from jeepney.io.blocking import DBusConnection, open_dbus_connection
@@ -40,6 +44,14 @@ _PORTAL = DBusAddress(
 _DBUS_TIMEOUT = 2.0
 # What connecting to the session bus or calling the portal raises when either is unavailable
 _DBUS_ERRORS = (OSError, KeyError, RuntimeError, AuthenticationError, DBusErrorResponse)
+# The settings theme() reads, as (namespace or schema, key)
+_THEME_SETTINGS = frozenset(
+    {
+        (_APPEARANCE_NAMESPACE, "color-scheme"),
+        (_INTERFACE_SCHEMA, "color-scheme"),
+        (_INTERFACE_SCHEMA, "gtk-theme"),
+    }
+)
 
 
 class _ColorScheme(IntEnum):
@@ -120,16 +132,70 @@ def theme() -> Theme | None:
             return _gsettings_theme()
 
 
+def _report_changes(callback: Callable[[str], None], changed: Iterable[tuple[str, str]]) -> None:
+    """Call ``callback`` whenever a change to one of ``_THEME_SETTINGS`` changes the theme."""
+    last = theme()
+    for _ in filter(_THEME_SETTINGS.__contains__, changed):
+        if (current := theme()) is not None and current != last:
+            last = current
+            callback(current)
+
+
+def _portal_changes(conn: DBusConnection, queue: deque[Message]) -> Iterator[tuple[str, str]]:
+    """Yield the (namespace, key) of every setting the portal reports as changed."""
+    while True:
+        match conn.recv_until_filtered(queue).body:
+            case (str() as namespace, str() as key, *_):
+                yield namespace, key
+            case _:
+                pass
+
+
+def _subscribe_to_portal() -> tuple[DBusConnection, MatchRule] | None:
+    """Subscribe to the portal's SettingChanged signal, or return None if there is no portal."""
+    rule = MatchRule(
+        type="signal",
+        interface=_PORTAL.interface,
+        member="SettingChanged",
+        path=_PORTAL.object_path,
+    )
+    try:
+        conn = open_dbus_connection(_session_bus())
+    except _DBUS_ERRORS:
+        return None
+    try:
+        # A bus without a portal still accepts the match rule, so check the portal answers
+        _read_color_scheme(conn)
+        unwrap_msg(conn.send_and_get_reply(message_bus.AddMatch(rule), timeout=_DBUS_TIMEOUT))
+    except _DBUS_ERRORS:
+        conn.close()
+        return None
+    return conn, rule
+
+
+def _gsettings_listener(callback: Callable[[str], None]) -> None:
+    """Report theme changes seen by ``gsettings monitor``."""
+    try:
+        p = subprocess.Popen(  # noqa: S603  # fixed argv
+            ("gsettings", "monitor", _INTERFACE_SCHEMA),  # noqa: S607
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+    except FileNotFoundError as e:
+        msg = "neither the XDG desktop portal nor gsettings is available"
+        raise NotImplementedError(msg) from e
+    with p:
+        # Each line is "key: value"
+        lines = p.stdout or ()
+        _report_changes(callback, ((_INTERFACE_SCHEMA, line.partition(":")[0]) for line in lines))
+
+
 def listener(callback: Callable[[str], None]) -> None:
     """Call ``callback`` with the new theme on every change."""
-    with subprocess.Popen(
-        ("gsettings", "monitor", "org.gnome.desktop.interface", "gtk-theme"),  # noqa: S607
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-    ) as p:
-        for line in p.stdout or ():
-            callback(
-                "Dark"
-                if "-dark" in line.strip().removeprefix("gtk-theme: '").removesuffix("'").lower()
-                else "Light"
-            )
+    if (subscription := _subscribe_to_portal()) is None:
+        _gsettings_listener(callback)
+        return
+    conn, rule = subscription
+    # Room for a burst of SettingChanged signals, of which only some are about the theme
+    with conn, conn.filter(rule, bufsize=64) as queue:
+        _report_changes(callback, _portal_changes(conn, queue))

@@ -220,3 +220,29 @@ def test_theme_asks_gsettings_when_the_bus_has_no_portal(
     del private_bus
     monkeypatch.setattr(subprocess, "run", _fake_run("'prefer-dark'\n"))
     assert _linux_detect.theme() == "Dark"
+
+
+def test_listener_reports_portal_changes(
+    monkeypatch: pytest.MonkeyPatch, portal: FakePortal
+) -> None:
+    monkeypatch.setattr(subprocess, "run", _no_gsettings)
+    seen: queue.SimpleQueue[str] = queue.SimpleQueue()
+
+    def listen() -> None:
+        # The listener runs until the bus goes away at teardown
+        try:
+            _linux_detect.listener(seen.put)
+        except OSError:
+            return
+
+    threading.Thread(target=listen, daemon=True).start()
+    # One Read checks the portal is there, the next, after subscribing, is the starting theme
+    portal.wait_for_reads(2)
+    # Nothing is reported for unrelated settings, or for a change that keeps the theme
+    portal.change("org.gnome.desktop.interface", "font-name", 0)
+    portal.change("org.freedesktop.appearance", "color-scheme", 1)
+    portal.change("org.freedesktop.appearance", "color-scheme", 2)
+    assert seen.get(timeout=_TIMEOUT) == "Light"
+    portal.change("org.freedesktop.appearance", "color-scheme", 1)
+    assert seen.get(timeout=_TIMEOUT) == "Dark"
+    assert seen.empty()
