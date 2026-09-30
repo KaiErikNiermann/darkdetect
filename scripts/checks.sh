@@ -14,3 +14,4 @@ if poetry run radon cc darkdetect -n C | grep -q .; then
     poetry run radon cc darkdetect -n C -s
     exit 1
 fi
+poetry run pytest -q

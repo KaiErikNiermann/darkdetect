@@ -49,13 +49,14 @@ dev = [
     "pyright>=1.1.408",
     "radon>=6.0.1",
     "ruff>=0.15.0",
+    "pytest (>=9.1.1,<10.0.0)",
 ]
 
 [tool.poetry]
 package-mode = false
 
 [tool.pyright]
-include = ["darkdetect"]
+include = ["darkdetect", "tests"]
 # The Windows and macOS backends only type-check under their own platform; see scripts/pyright-*.json.
 exclude = ["darkdetect/_windows_detect.py", "darkdetect/_mac_detect.py"]
 typeCheckingMode = "strict"
@@ -79,6 +80,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D", "S603"]
 "darkdetect/__init__.py" = ["F403", "F401"]
 "darkdetect/__main__.py" = ["T201"]
 "darkdetect/_windows_detect.py" = ["E402"]  # imports follow the platform guard
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
