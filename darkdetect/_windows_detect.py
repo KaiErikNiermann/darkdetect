@@ -2,7 +2,9 @@
 
 import ctypes
 import ctypes.wintypes
-from winreg import HKEY_CURRENT_USER as hkey
+from collections.abc import Callable
+from typing import Literal
+from winreg import HKEY_CURRENT_USER as hkey  # noqa: N811
 from winreg import OpenKey as getKey
 from winreg import QueryValueEx as getSubkeyValue
 
@@ -59,34 +61,41 @@ advapi32.RegNotifyChangeKeyValue.argtypes = (
 advapi32.RegNotifyChangeKeyValue.restype = ctypes.wintypes.LONG
 
 
-def theme():
-    """Uses the Windows Registry to detect if the user is using Dark Mode"""
-    # Registry will return 0 if Windows is in Dark Mode and 1 if Windows is in Light Mode. This dictionary converts that output into the text that the program is expecting.
-    valueMeaning = {0: "Dark", 1: "Light"}
+def theme() -> Literal["Dark", "Light"] | None:
+    """Use the Windows Registry to detect if the user is using Dark Mode."""
+    # Registry will return 0 if Windows is in Dark Mode and 1 if Windows is in Light Mode. This
+    # dictionary converts that output into the text that the program is expecting.
+    valueMeaning: dict[int, Literal["Dark", "Light"]] = {0: "Dark", 1: "Light"}
     # In HKEY_CURRENT_USER, get the Personalisation Key.
     try:
         key = getKey(hkey, "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize")
         # In the Personalisation Key, get the AppsUseLightTheme subkey. This returns a tuple.
-        # The first item in the tuple is the result we want (0 or 1 indicating Dark Mode or Light Mode); the other value is the type of subkey e.g. DWORD, QWORD, String, etc.
+        # The first item in the tuple is the result we want (0 or 1 indicating Dark Mode or
+        # Light Mode); the other value is the type of subkey e.g. DWORD, QWORD, String, etc.
         subkey = getSubkeyValue(key, "AppsUseLightTheme")[0]
     except FileNotFoundError:
-        # some headless Windows instances (e.g. GitHub Actions or Docker images) do not have this key
+        # some headless Windows instances (e.g. GitHub Actions or Docker images) do not have this
+        # key
         return None
     return valueMeaning[subkey]
 
 
-def isDark():
+def isDark() -> bool | None:
+    """Return whether the theme is dark, or None if unknown."""
     if theme() is not None:
         return theme() == "Dark"
+    return None
 
 
-def isLight():
+def isLight() -> bool | None:
+    """Return whether the theme is light, or None if unknown."""
     if theme() is not None:
         return theme() == "Light"
+    return None
 
 
-# def listener(callback: typing.Callable[[str], None]) -> None:
-def listener(callback):
+def listener(callback: Callable[[str], None]) -> None:
+    """Call ``callback`` with the new theme on every change."""
     hKey = ctypes.wintypes.HKEY()
     advapi32.RegOpenKeyExA(
         ctypes.wintypes.HKEY(0x80000001),  # HKEY_CURRENT_USER
