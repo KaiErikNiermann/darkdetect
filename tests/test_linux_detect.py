@@ -24,16 +24,19 @@ def _fake_run(*outputs: str) -> Runner:
 @pytest.mark.parametrize(
     ("stdout", "expected"),
     [
-        ("'prefer-dark'\n", "Dark"),
-        ("'Adwaita-dark'\n", "Dark"),
-        ("'Adwaita'\n", "Light"),
-        ("'default'\n", "Light"),
+        (("'prefer-dark'\n",), "Dark"),
+        (("'prefer-light'\n",), "Light"),
+        (("'default'\n", "'Adwaita'\n"), "Light"),
+        (("'default'\n", "'Adwaita-dark'\n"), "Dark"),
+        (("'default'\n", ""), "Light"),
     ],
 )
 def test_theme_parses_gsettings_output(
-    monkeypatch: pytest.MonkeyPatch, stdout: str, expected: Literal["Dark", "Light"]
+    monkeypatch: pytest.MonkeyPatch,
+    stdout: tuple[str, ...],
+    expected: Literal["Dark", "Light"],
 ) -> None:
-    monkeypatch.setattr(subprocess, "run", _fake_run(stdout))
+    monkeypatch.setattr(subprocess, "run", _fake_run(*stdout))
     assert _linux_detect.theme() == expected
 
 

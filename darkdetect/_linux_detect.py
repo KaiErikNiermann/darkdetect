@@ -30,11 +30,16 @@ def _gsettings(key: str) -> str | None:
 
 def theme() -> Literal["Dark", "Light"] | None:
     """Return the current theme, or None if it cannot be read."""
-    # The freedesktop color-scheme key, then the older gtk-theme one where it is missing
-    current = _gsettings("color-scheme") or _gsettings("gtk-theme")
-    if current is None:
-        return None
-    return "Dark" if "-dark" in current.lower() else "Light"
+    match _gsettings("color-scheme"):
+        case "prefer-dark":
+            return "Dark"
+        case "prefer-light":
+            return "Light"
+        case scheme:
+            # "default" or a GNOME older than 42: a dark GTK theme still makes apps dark
+            if (gtk_theme := _gsettings("gtk-theme")) is None:
+                return None if scheme is None else "Light"
+            return "Dark" if "-dark" in gtk_theme.lower() else "Light"
 
 
 def listener(callback: Callable[[str], None]) -> None:
