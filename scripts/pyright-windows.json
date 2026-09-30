@@ -1,0 +1,6 @@
+{
+  "include": ["../darkdetect/_windows_detect.py"],
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Windows"
+}
