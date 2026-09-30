@@ -104,6 +104,14 @@ def test_theme_is_none_when_gsettings_prints_nothing(monkeypatch: pytest.MonkeyP
     assert _linux_detect.theme() is None
 
 
+def test_theme_asks_gsettings_when_the_bus_address_is_malformed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DBUS_SESSION_BUS_ADDRESS", "garbage")
+    monkeypatch.setattr(subprocess, "run", _fake_run("'prefer-dark'\n"))
+    assert _linux_detect.theme() == "Dark"
+
+
 def test_session_bus_falls_back_to_the_user_bus_socket(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("DBUS_SESSION_BUS_ADDRESS")
     monkeypatch.setenv("XDG_RUNTIME_DIR", "/run/user/4242")

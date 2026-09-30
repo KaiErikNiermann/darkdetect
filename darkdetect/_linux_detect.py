@@ -21,7 +21,6 @@ from enum import IntEnum
 from typing import Literal
 
 from jeepney import (
-    AuthenticationError,
     DBusAddress,
     DBusErrorResponse,
     MatchRule,
@@ -46,7 +45,8 @@ _PORTAL = DBusAddress(
 # Seconds to wait on the portal, which the bus may first have to start
 _DBUS_TIMEOUT = 2.0
 # What connecting to the session bus or calling the portal raises when either is unavailable
-_DBUS_ERRORS = (OSError, KeyError, RuntimeError, AuthenticationError, DBusErrorResponse)
+# (a malformed bus address and a failed authentication both raise ValueError)
+_DBUS_ERRORS = (OSError, KeyError, ValueError, RuntimeError, DBusErrorResponse)
 # The settings theme() reads, as (namespace or schema, key)
 _THEME_SETTINGS = frozenset(
     {
