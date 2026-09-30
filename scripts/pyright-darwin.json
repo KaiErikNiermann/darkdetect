@@ -1,5 +1,5 @@
 {
-  "include": ["../darkdetect/_darwin_detect.py"],
+  "include": ["../darkdetect/_mac_detect.py"],
   "typeCheckingMode": "strict",
   "pythonVersion": "3.14",
   "pythonPlatform": "Darwin"

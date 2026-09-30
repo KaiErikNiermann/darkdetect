@@ -1,3 +1,5 @@
+"""Windows backend using the registry."""
+
 import ctypes
 import ctypes.wintypes
 from winreg import HKEY_CURRENT_USER as hkey

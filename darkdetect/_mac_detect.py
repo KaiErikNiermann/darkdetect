@@ -4,6 +4,8 @@
 #  Distributed under the terms of the 3-clause BSD License.
 # -----------------------------------------------------------------------------
 
+"""macOS backend using the Objective-C runtime."""
+
 import ctypes
 import ctypes.util
 import os
@@ -95,8 +97,7 @@ def isLight():
 
 
 def _listen_child():
-    """Run by a child process, install an observer and print theme on change
-    """
+    """Run by a child process, install an observer and print theme on change"""
     import signal
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
