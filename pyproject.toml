@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.2"]
+requires = ["setuptools>=82"]
 build-backend = "setuptools.build_meta"
 
 # Project Config
@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 name = "darkdetect"
 description = "Detect OS Dark Mode from Python"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.14"
 dynamic = [ "version" ]
 classifiers = [
     "License :: OSI Approved :: BSD License",
@@ -16,11 +16,7 @@ classifiers = [
     "Operating System :: Microsoft :: Windows :: Windows 10",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [project.license]
@@ -35,7 +31,7 @@ homepage = "http://github.com/albertosottile/darkdetect"
 download = "http://github.com/albertosottile/darkdetect/releases"
 
 [project.optional-dependencies]
-macos-listener = [ "pyobjc-framework-Cocoa; platform_system == 'Darwin'" ]
+macos-listener = [ "pyobjc-framework-Cocoa>=12.2.2; platform_system == 'Darwin'" ]
 
 # Tool Config
 
