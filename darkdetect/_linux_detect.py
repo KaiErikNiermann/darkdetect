@@ -27,8 +27,7 @@ def theme():
     theme = stdout.lower().strip()[1:-1]
     if "-dark" in theme.lower():
         return "Dark"
-    else:
-        return "Light"
+    return "Light"
 
 
 def isDark():

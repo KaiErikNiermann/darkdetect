@@ -6,8 +6,8 @@
 
 __version__ = "0.8.0"
 
-import sys
 import platform
+import sys
 
 
 def macos_supported_version():
@@ -15,14 +15,12 @@ def macos_supported_version():
     major = int(sysver.split(".")[0])
     if major < 10:
         return False
-    elif major >= 11:
+    if major >= 11:
         return True
-    else:
-        minor = int(sysver.split(".")[1])
-        if minor < 14:
-            return False
-        else:
-            return True
+    minor = int(sysver.split(".")[1])
+    if minor < 14:
+        return False
+    return True
 
 
 if sys.platform == "darwin":

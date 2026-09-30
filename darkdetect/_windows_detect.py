@@ -1,7 +1,8 @@
-from winreg import HKEY_CURRENT_USER as hkey, QueryValueEx as getSubkeyValue, OpenKey as getKey
-
 import ctypes
 import ctypes.wintypes
+from winreg import HKEY_CURRENT_USER as hkey
+from winreg import OpenKey as getKey
+from winreg import QueryValueEx as getSubkeyValue
 
 advapi32 = ctypes.windll.advapi32
 

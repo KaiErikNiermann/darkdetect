@@ -6,17 +6,17 @@
 
 import ctypes
 import ctypes.util
+import os
 import subprocess
 import sys
-import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 try:
     from Foundation import (
-        NSObject,
-        NSKeyValueObservingOptionNew,
         NSKeyValueChangeNewKey,
+        NSKeyValueObservingOptionNew,
+        NSObject,
         NSUserDefaults,
     )
     from PyObjCTools import AppHelper
@@ -83,8 +83,7 @@ def theme():
 
     if out is not None:
         return out.decode("utf-8")
-    else:
-        return "Light"
+    return "Light"
 
 
 def isDark():
@@ -96,8 +95,7 @@ def isLight():
 
 
 def _listen_child():
-    """
-    Run by a child process, install an observer and print theme on change
+    """Run by a child process, install an observer and print theme on change
     """
     import signal
 
@@ -112,7 +110,7 @@ def _listen_child():
             result = changeDescription[NSKeyValueChangeNewKey]
             try:
                 print(f"{'Light' if result is None else result}", flush=True)
-            except IOError:
+            except OSError:
                 os._exit(1)
 
     observer = Observer.new()  # Keep a reference alive after installing
