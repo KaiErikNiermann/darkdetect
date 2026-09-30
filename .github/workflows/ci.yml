@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install --no-root
+      - name: Ruff lint
+        run: poetry run ruff check
+      - name: Ruff format
+        run: poetry run ruff format --check
+      - name: Radon complexity (fail above grade B)
+        run: |
+          poetry run radon cc darkdetect -n C -s
+          test -z "$(poetry run radon cc darkdetect -n C)"
+      - name: Pyright (Linux)
+        run: poetry run pyright
+      - name: Pyright (Windows backend)
+        run: poetry run pyright -p scripts/pyright-windows.json
+      - name: Pyright (macOS backend)
+        run: poetry run pyright -p scripts/pyright-darwin.json
+
+  test:
+    name: Test (${{ matrix.os }})
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install --no-root
+      - name: Pytest
+        run: poetry run pytest -q
