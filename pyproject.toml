@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.14",
 ]
+dependencies = ["jeepney (>=0.9.0) ; sys_platform == \"linux\""]
 
 [project.license]
 text = "BSD-3-Clause"
@@ -56,7 +57,7 @@ dev = [
 package-mode = false
 
 [tool.pyright]
-include = ["darkdetect", "tests"]
+include = ["darkdetect", "tests", "typings"]
 # The Windows and macOS backends only type-check under their own platform; see scripts/pyright-*.json.
 exclude = ["darkdetect/_windows_detect.py", "darkdetect/_mac_detect.py"]
 typeCheckingMode = "strict"
@@ -81,6 +82,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "D", "S603"]
+# Stubs mirror jeepney's own names and signatures
+"typings/*" = ["A002", "N802", "N818", "D", "ANN401", "PYI"]
 "darkdetect/__init__.py" = ["F403", "F401", "F405"]
 "darkdetect/__main__.py" = ["T201"]
 "darkdetect/_windows_detect.py" = ["E402"]  # imports follow the platform guard
