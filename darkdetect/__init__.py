@@ -25,17 +25,23 @@ def macos_supported_version() -> bool:
     return minor >= 14
 
 
+def _windows_supported(version: str) -> bool:
+    """Return whether Windows ``version`` is at least 10.0.14393, the first with dark mode."""
+    # Compare the build: platform.release() is "2022Server" on Windows Server 2022, "8.1" on 8.1
+    match version.split("."):  # e.g. 10.0.20348
+        case [major, _, build, *_] if major.isdigit() and build.isdigit():
+            return (int(major), int(build)) >= (10, 14393)
+        case _:
+            return False
+
+
 if sys.platform == "darwin":
     if macos_supported_version():
         from ._mac_detect import *
     else:
         from ._dummy import *
-elif sys.platform == "win32" and platform.release().isdigit() and int(platform.release()) >= 10:
-    # Checks if running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER. The
-    # getwindowsversion method returns a tuple. The third item is the build number that we can
-    # use to check if the user has a new enough version of Windows.
-    winver = int(platform.version().split(".")[2])
-    if winver >= 14393:
+elif sys.platform == "win32":
+    if _windows_supported(platform.version()):
         from ._windows_detect import *
     else:
         from ._dummy import *
