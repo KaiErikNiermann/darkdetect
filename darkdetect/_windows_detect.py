@@ -88,20 +88,6 @@ def theme() -> Literal["Dark", "Light"] | None:
     return valueMeaning[subkey]
 
 
-def isDark() -> bool | None:
-    """Return whether the theme is dark, or None if unknown."""
-    if theme() is not None:
-        return theme() == "Dark"
-    return None
-
-
-def isLight() -> bool | None:
-    """Return whether the theme is light, or None if unknown."""
-    if theme() is not None:
-        return theme() == "Light"
-    return None
-
-
 def listener(callback: Callable[[str], None]) -> None:
     """Call ``callback`` with the new theme on every change."""
     hKey = ctypes.wintypes.HKEY()

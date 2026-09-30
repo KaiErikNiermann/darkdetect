@@ -93,16 +93,6 @@ def theme() -> str:
     return "Light"
 
 
-def isDark() -> bool:
-    """Return whether the theme is dark."""
-    return theme() == "Dark"
-
-
-def isLight() -> bool:
-    """Return whether the theme is light."""
-    return theme() == "Light"
-
-
 def _listen_child() -> None:  # pyright: ignore[reportUnusedFunction]
     """Run by a child process, install an observer and print theme on change."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)

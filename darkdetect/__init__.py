@@ -45,3 +45,13 @@ else:
     from ._dummy import *
 
 del sys, platform
+
+
+def isDark() -> bool | None:
+    """Return whether the theme is dark, or None if it is unknown."""
+    return None if (current := theme()) is None else current == "Dark"
+
+
+def isLight() -> bool | None:
+    """Return whether the theme is light, or None if it is unknown."""
+    return None if (current := theme()) is None else current == "Light"

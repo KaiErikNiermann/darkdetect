@@ -55,9 +55,3 @@ def test_theme_is_none_when_gsettings_is_missing(monkeypatch: pytest.MonkeyPatch
 def test_theme_is_none_when_gsettings_prints_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(subprocess, "run", _fake_run("", ""))
     assert _linux_detect.theme() is None
-
-
-def test_is_dark_and_is_light_follow_theme(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(_linux_detect, "theme", lambda: "Dark")
-    assert _linux_detect.isDark()
-    assert not _linux_detect.isLight()

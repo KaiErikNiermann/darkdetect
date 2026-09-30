@@ -81,7 +81,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "D", "S603"]
-"darkdetect/__init__.py" = ["F403", "F401"]
+"darkdetect/__init__.py" = ["F403", "F401", "F405"]
 "darkdetect/__main__.py" = ["T201"]
 "darkdetect/_windows_detect.py" = ["E402"]  # imports follow the platform guard
 

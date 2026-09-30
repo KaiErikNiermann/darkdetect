@@ -37,16 +37,6 @@ def theme() -> Literal["Dark", "Light"] | None:
     return "Dark" if "-dark" in current.lower() else "Light"
 
 
-def isDark() -> bool | None:
-    """Return whether the theme is dark, or None if it is unknown."""
-    return None if (current := theme()) is None else current == "Dark"
-
-
-def isLight() -> bool | None:
-    """Return whether the theme is light, or None if it is unknown."""
-    return None if (current := theme()) is None else current == "Light"
-
-
 def listener(callback: Callable[[str], None]) -> None:
     """Call ``callback`` with the new theme on every change."""
     with subprocess.Popen(

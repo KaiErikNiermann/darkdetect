@@ -14,16 +14,6 @@ def theme() -> None:
     return
 
 
-def isDark() -> None:
-    """Return no answer."""
-    return
-
-
-def isLight() -> None:
-    """Return no answer."""
-    return
-
-
 def listener(callback: typing.Callable[[str], None]) -> None:
     """Raise, as listening is unsupported here."""
     raise NotImplementedError()
