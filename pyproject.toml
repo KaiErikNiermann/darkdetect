@@ -84,6 +84,7 @@ ignore = [
     "D203", "D213",  # conflict with D211 / D212
     "N802", "N803", "N806",  # camelCase isDark/isLight is public API
     "COM812",
+    "PLR2004",  # platform version thresholds are not magic
 ]
 
 [tool.ruff.lint.per-file-ignores]

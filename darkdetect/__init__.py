@@ -4,23 +4,25 @@
 #  Distributed under the terms of the 3-clause BSD License.
 # -----------------------------------------------------------------------------
 
+"""Detect the OS dark mode setting."""
+
 __version__ = "0.8.0"
 
 import platform
 import sys
 
 
-def macos_supported_version():
-    sysver = platform.mac_ver()[0]  # typically 10.14.2 or 12.3
+def macos_supported_version() -> bool:
+    """Return whether this macOS is at least 10.14 (first with dark mode)."""
+    # platform is deleted at module end, so this is only callable during import
+    sysver = platform.mac_ver()[0]  # noqa: F821  # typically 10.14.2 or 12.3
     major = int(sysver.split(".")[0])
     if major < 10:
         return False
     if major >= 11:
         return True
     minor = int(sysver.split(".")[1])
-    if minor < 14:
-        return False
-    return True
+    return minor >= 14
 
 
 if sys.platform == "darwin":
@@ -29,8 +31,9 @@ if sys.platform == "darwin":
     else:
         from ._dummy import *
 elif sys.platform == "win32" and platform.release().isdigit() and int(platform.release()) >= 10:
-    # Checks if running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER. The getwindowsversion method returns a tuple.
-    # The third item is the build number that we can use to check if the user has a new enough version of Windows.
+    # Checks if running Windows 10 version 10.0.14393 (Anniversary Update) OR HIGHER. The
+    # getwindowsversion method returns a tuple. The third item is the build number that we can
+    # use to check if the user has a new enough version of Windows.
     winver = int(platform.version().split(".")[2])
     if winver >= 14393:
         from ._windows_detect import *
