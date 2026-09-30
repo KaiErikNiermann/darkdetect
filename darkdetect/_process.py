@@ -13,15 +13,19 @@ stopped when its listener returns or raises, and at interpreter exit.
 
 import atexit
 import subprocess
+import tempfile
 import weakref
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 
 _running: weakref.WeakSet[subprocess.Popen[str]] = weakref.WeakSet()
+# Children stopped at exit, whose listener then ends without that being an error
+_stopped: weakref.WeakSet[subprocess.Popen[str]] = weakref.WeakSet()
 
 
 def _stop_all() -> None:
     for p in tuple(_running):
+        _stopped.add(p)
         p.terminate()
 
 
@@ -37,20 +41,25 @@ def child_output(args: Sequence[str]) -> Generator[Iterator[str]]:
     The child's stdin is a pipe that is never written to, so it reaches end of file when this
     process exits, however that happens; a child can watch it to exit along with us.
     """
-    with subprocess.Popen(  # noqa: S603  # argv comes from the backends, never from the caller
-        args,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    ) as p:
+    # stderr goes to a file, as a pipe nobody reads until the end could fill and block the child
+    with (
+        tempfile.TemporaryFile("w+") as stderr,
+        subprocess.Popen(  # noqa: S603  # argv comes from the backends, never from the caller
+            args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=stderr,
+            text=True,
+        ) as p,
+    ):
         _running.add(p)
         try:
             yield iter(p.stdout or ())
             # Output ended, so the child exited; a listener's child only does that when it fails
-            if p.wait() > 0:
-                stderr = p.stderr.read().strip() if p.stderr else ""
-                msg = f"{args[0]} exited with status {p.returncode}: {stderr}"
+            # (a signal counts too, as a negative status, unless it was ours at exit)
+            if p.wait() != 0 and p not in _stopped:
+                stderr.seek(0)
+                msg = f"{args[0]} exited with status {p.returncode}: {stderr.read().strip()}"
                 raise ChildProcessError(msg)
         finally:
             _running.discard(p)

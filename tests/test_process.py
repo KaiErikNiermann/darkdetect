@@ -65,3 +65,18 @@ def test_a_failing_child_raises_instead_of_ending_quietly() -> None:
         _process.child_output(failing) as lines,
     ):
         assert list(lines) == []
+
+
+def test_a_child_killed_by_a_signal_raises() -> None:
+    with (
+        pytest.raises(ChildProcessError, match="status -9"),
+        _process.child_output(_CHILD) as lines,
+    ):
+        os.kill(int(next(lines)), 9)
+        assert list(lines) == []
+
+
+def test_a_child_can_write_more_stderr_than_a_pipe_holds() -> None:
+    noisy = (sys.executable, "-c", "import sys; sys.stderr.write('x' * 1_000_000); sys.exit(1)")
+    with pytest.raises(ChildProcessError), _process.child_output(noisy) as lines:
+        assert list(lines) == []
