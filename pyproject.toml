@@ -51,6 +51,7 @@ dev = [
     "radon>=6.0.1",
     "ruff>=0.15.0",
     "pytest (>=9.1.1,<10.0.0)",
+    "pyobjc-framework-cocoa (>=12.2.2) ; sys_platform == \"darwin\"",
 ]
 
 [tool.poetry]

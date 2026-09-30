@@ -121,10 +121,9 @@ windows-terminal = ["colorama (>=0.4.6)"]
 name = "pyobjc-core"
 version = "12.2.2"
 description = "Python<->ObjC Interoperability Module"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "platform_system == \"Darwin\" and extra == \"macos-listener\""
+groups = ["main", "dev"]
 files = [
     {file = "pyobjc_core-12.2.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:56c6c39f1de059fcbb174ebca5525505fc8feaa89be2a28c329bf09b6b25ee75"},
     {file = "pyobjc_core-12.2.2-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:b9cdd686e32db8e451feb19f8a85bc4cd52c2893103881d04aca51e1f35371d1"},
@@ -137,15 +136,15 @@ files = [
     {file = "pyobjc_core-12.2.2-cp315-cp315t-macosx_10_15_universal2.whl", hash = "sha256:59a77038ebe0ab1240f61c341e7fb67b8674f2b4cd41bc71a6472511a12b50f7"},
     {file = "pyobjc_core-12.2.2.tar.gz", hash = "sha256:3906452339cd06a3bb07df103c2511d4cb0f7a22d8771c0b802eba15d9a642b6"},
 ]
+markers = {main = "platform_system == \"Darwin\" and extra == \"macos-listener\"", dev = "sys_platform == \"darwin\""}
 
 [[package]]
 name = "pyobjc-framework-cocoa"
 version = "12.2.2"
 description = "Wrappers for the Cocoa frameworks on macOS"
-optional = true
+optional = false
 python-versions = ">=3.10"
-groups = ["main"]
-markers = "platform_system == \"Darwin\" and extra == \"macos-listener\""
+groups = ["main", "dev"]
 files = [
     {file = "pyobjc_framework_cocoa-12.2.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5a751c8033a3b51f7996f0327e0675eb44dcfdfe7920fae01e3d78b662723fff"},
     {file = "pyobjc_framework_cocoa-12.2.2-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:851dca4c16e70b405e5cd5a8c166cf7c445ae54a4cdd95ce9a523803172f32d1"},
@@ -158,6 +157,7 @@ files = [
     {file = "pyobjc_framework_cocoa-12.2.2-cp315-cp315t-macosx_10_15_universal2.whl", hash = "sha256:8fe5b2e79c9530f667b4e58a87a3a15ea62f86a5d19eec405517ecbd4f454868"},
     {file = "pyobjc_framework_cocoa-12.2.2.tar.gz", hash = "sha256:c96c0ef69a71afbbb0e6a7d594b455c5fe47d62e0db376ee7a2b4b828c16ace9"},
 ]
+markers = {main = "platform_system == \"Darwin\" and extra == \"macos-listener\"", dev = "sys_platform == \"darwin\""}
 
 [package.dependencies]
 pyobjc-core = ">=12.2.2"
@@ -282,4 +282,4 @@ macos-listener = ["pyobjc-framework-Cocoa"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14"
-content-hash = "dc75216962079e80ca148ac0209484e4083f63a477d5a9c88cd302dedc066190"
+content-hash = "ccbd9235864ca4170f4bddd434f9a27845abd0663eaa12fe97ef2036a956e047"

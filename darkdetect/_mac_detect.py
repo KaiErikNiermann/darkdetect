@@ -142,6 +142,10 @@ def listener(callback: Callable[[str], None]) -> None:
     """Call ``callback`` with the new theme on every change."""
     if not _can_listen:
         raise NotImplementedError()
+    if getattr(sys, "frozen", False) and not Path(sys.executable).name.startswith("python"):
+        # sys.executable is the app itself, which would ignore -c and start another copy
+        msg = "the macOS listener needs a Python interpreter; frozen apps are not supported"
+        raise NotImplementedError(msg)
     # The package's parent goes on the child's path explicitly: the working directory is not
     # on it under PYTHONSAFEPATH, and the caller may have imported darkdetect from anywhere
     with child_output(

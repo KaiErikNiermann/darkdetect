@@ -56,3 +56,12 @@ def test_child_is_stopped_when_the_program_exits() -> None:
         [sys.executable, "-c", script], capture_output=True, text=True, check=True, timeout=30
     )
     assert _gone(int(out.stdout))
+
+
+def test_a_failing_child_raises_instead_of_ending_quietly() -> None:
+    failing = (sys.executable, "-c", "raise SystemExit('no observer')")
+    with (
+        pytest.raises(ChildProcessError, match="no observer"),
+        _process.child_output(failing) as lines,
+    ):
+        assert list(lines) == []

@@ -32,6 +32,8 @@ atexit.register(_stop_all)
 def child_output(args: Sequence[str]) -> Generator[Iterator[str]]:
     """Run ``args`` and give the lines it prints, stopping it when the block ends.
 
+    Raises ChildProcessError if the child fails, rather than letting the listener end quietly.
+
     The child's stdin is a pipe that is never written to, so it reaches end of file when this
     process exits, however that happens; a child can watch it to exit along with us.
     """
@@ -39,11 +41,17 @@ def child_output(args: Sequence[str]) -> Generator[Iterator[str]]:
         args,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
     ) as p:
         _running.add(p)
         try:
             yield iter(p.stdout or ())
+            # Output ended, so the child exited; a listener's child only does that when it fails
+            if p.wait() > 0:
+                stderr = p.stderr.read().strip() if p.stderr else ""
+                msg = f"{args[0]} exited with status {p.returncode}: {stderr}"
+                raise ChildProcessError(msg)
         finally:
             _running.discard(p)
             # A no-op if it has already exited; otherwise Popen.__exit__ would wait on it forever
