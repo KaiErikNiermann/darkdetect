@@ -16,10 +16,12 @@ import ctypes
 import ctypes.util
 import os
 import signal
-import subprocess
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
+
+from ._process import child_output
 
 try:
     from Foundation import (
@@ -93,9 +95,17 @@ def theme() -> str:
     return "Light"
 
 
+def _exit_with_parent() -> None:
+    """Exit once stdin, a pipe from the parent, reaches end of file as the parent exits."""
+    sys.stdin.read()
+    os._exit(0)
+
+
 def _listen_child() -> None:  # pyright: ignore[reportUnusedFunction]
     """Run by a child process, install an observer and print theme on change."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+    # Even a parent that is killed outright closes the pipe, so this child never outlives it
+    threading.Thread(target=_exit_with_parent, daemon=True).start()
 
     OBSERVED_KEY = "AppleInterfaceStyle"
 
@@ -122,15 +132,20 @@ def _listen_child() -> None:  # pyright: ignore[reportUnusedFunction]
     AppHelper.runConsoleEventLoop()
 
 
+_CHILD_SCRIPT = (
+    "import sys; sys.path.insert(0, sys.argv[1]); "
+    "from darkdetect._mac_detect import _listen_child; _listen_child()"
+)
+
+
 def listener(callback: Callable[[str], None]) -> None:
     """Call ``callback`` with the new theme on every change."""
     if not _can_listen:
         raise NotImplementedError()
-    with subprocess.Popen(
-        (sys.executable, "-c", "import _mac_detect as m; m._listen_child()"),
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-        cwd=Path(__file__).parent,
-    ) as p:
-        for line in p.stdout or ():
+    # The package's parent goes on the child's path explicitly: the working directory is not
+    # on it under PYTHONSAFEPATH, and the caller may have imported darkdetect from anywhere
+    with child_output(
+        (sys.executable, "-c", _CHILD_SCRIPT, str(Path(__file__).parents[1]))
+    ) as lines:
+        for line in lines:
             callback(line.strip())

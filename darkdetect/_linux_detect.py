@@ -13,6 +13,7 @@ environment, whose gsettings has no dconf module and reports the schema defaults
 """
 
 import os
+import shutil
 import subprocess
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator
@@ -30,6 +31,8 @@ from jeepney import (
 )
 from jeepney.io.blocking import DBusConnection, open_dbus_connection
 from jeepney.wrappers import unwrap_msg
+
+from ._process import child_output
 
 type Theme = Literal["Dark", "Light"]
 
@@ -175,18 +178,11 @@ def _subscribe_to_portal() -> tuple[DBusConnection, MatchRule] | None:
 
 def _gsettings_listener(callback: Callable[[str], None]) -> None:
     """Report theme changes seen by ``gsettings monitor``."""
-    try:
-        p = subprocess.Popen(  # noqa: S603  # fixed argv
-            ("gsettings", "monitor", _INTERFACE_SCHEMA),  # noqa: S607
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-    except FileNotFoundError as e:
+    if shutil.which("gsettings") is None:
         msg = "neither the XDG desktop portal nor gsettings is available"
-        raise NotImplementedError(msg) from e
-    with p:
+        raise NotImplementedError(msg)
+    with child_output(("gsettings", "monitor", _INTERFACE_SCHEMA)) as lines:
         # Each line is "key: value"
-        lines = p.stdout or ()
         _report_changes(callback, ((_INTERFACE_SCHEMA, line.partition(":")[0]) for line in lines))
 
 
