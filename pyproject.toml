@@ -59,6 +59,18 @@ include = ["darkdetect"]
 typeCheckingMode = "strict"
 pythonVersion = "3.14"
 
+[[tool.pyright.executionEnvironments]]
+root = "darkdetect/_windows_detect.py"
+pythonPlatform = "Windows"
+
+[[tool.pyright.executionEnvironments]]
+root = "darkdetect/_mac_detect.py"
+pythonPlatform = "Darwin"
+
+[[tool.pyright.executionEnvironments]]
+root = "."
+pythonPlatform = "Linux"
+
 [tool.ruff]
 line-length = 100
 target-version = "py314"
