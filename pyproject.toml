@@ -43,3 +43,37 @@ attr = "darkdetect.__version__"
 
 [tool.setuptools.packages.find]
 namespaces = false
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.408",
+    "radon>=6.0.1",
+    "ruff>=0.15.0",
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.pyright]
+include = ["darkdetect"]
+typeCheckingMode = "strict"
+pythonVersion = "3.14"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F", "I", "N", "UP", "B", "A", "C4", "SIM", "RET", "PL", "PTH",
+    "RUF", "ANN", "D", "S", "TRY", "PERF", "FURB", "T20", "ARG",
+]
+ignore = [
+    "D203", "D213",  # conflict with D211 / D212
+    "N802", "N803", "N806",  # camelCase isDark/isLight is public API
+    "COM812",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"darkdetect/__init__.py" = ["F403", "F401"]
+"darkdetect/__main__.py" = ["T201"]
